@@ -7,7 +7,11 @@ import importlib.metadata
 import importlib
 
 import fastapi
+import pydantic
 import httpx
+
+class EvalRequest(pydantic.BaseModel):
+    code: str
 
 class AbanosAPI(fastapi.FastAPI):
     """
@@ -44,17 +48,20 @@ class AbanosAPI(fastapi.FastAPI):
     async def healthz(self) -> dict:
         return {"status": "ok"}
 
-    async def eval(self, code: str) -> dict:
+    async def eval(self, request: EvalRequest) -> dict:
         """
         Evaluates the given code.
         """
-        async with self.client as client:
+        try:
             r = await self.client.post(
                 f"{self.backend_uri}/eval",
-                json=code,
+                json=request.model_dump_json(),
             )
-            r.raise_for_status()
-            return r.json()
+        except httpx.ConnectError as e:
+            raise fastapi.HTTPException(status_code=503, detail="Backend service is unavailable") from e
+
+        r.raise_for_status()
+        return r.json()
     
     async def close_http_client(self) -> None:
         await self.client.aclose()

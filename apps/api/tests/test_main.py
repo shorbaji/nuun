@@ -3,7 +3,7 @@ from unittest.mock import patch, AsyncMock
 import importlib.metadata
 import httpx
 
-from app import AbanosAPI
+from api.app import AbanosAPI
 
 def test_get_version():
     with patch("importlib.metadata.version", return_value="1.0.0"):
