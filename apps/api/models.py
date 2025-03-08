@@ -6,10 +6,12 @@ import pydantic
 Symbol = str
 Vector = List["Object"]
 
-class Null(pydantic.BaseModel):
+@dataclasses.dataclass
+class Null():
     pass
 
-class Eof(pydantic.BaseModel):
+@dataclasses.dataclass
+class Eof():
     pass
 
 @dataclasses.dataclass
@@ -21,8 +23,8 @@ class Pair():
 class Number():
     value: int | float | Tuple[int, int]
 
-
-class Expr(pydantic.BaseModel):
+@dataclasses.dataclass
+class Expr():
     pass
 
 @dataclasses.dataclass
@@ -31,9 +33,12 @@ class Procedure():
     body: List[Expr]
 
 @dataclasses.dataclass
-class Port(pydantic.BaseModel):
+class Port():
     address: str
 
-@dataclasses.dataclass
-class Object():
+class Object(pydantic.BaseModel):
     value: bool | bytes | str | Eof | Null | Number | Pair | Port | Procedure | Symbol | Vector
+
+    class Config:
+        # do not generate separate schema for Eof, Null, etc
+        json_schema_extra = {"by_alias": False}

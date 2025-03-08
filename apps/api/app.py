@@ -8,18 +8,6 @@ import importlib
 
 import fastapi
 import httpx
-import pydantic
-
-
-import models
-import exceptions
-
-class EvalRequest(pydantic.BaseModel):
-    code: str
-
-
-class EvalResponse(pydantic.BaseModel):
-    result: models.Object | exceptions.Error
 
 class AbanosAPI(fastapi.FastAPI):
     """
@@ -56,17 +44,17 @@ class AbanosAPI(fastapi.FastAPI):
     async def healthz(self) -> dict:
         return {"status": "ok"}
 
-    async def eval(self, request: EvalRequest) -> EvalResponse:
+    async def eval(self, code: str) -> dict:
         """
         Evaluates the given code.
         """
         async with self.client as client:
             r = await self.client.post(
                 f"{self.backend_uri}/eval",
-                json=request.model_dump(),
+                json=code,
             )
             r.raise_for_status()
-            return EvalResponse(**r.json())
+            return r.json()
     
     async def close_http_client(self) -> None:
         await self.client.aclose()
