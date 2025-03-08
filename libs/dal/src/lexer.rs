@@ -112,21 +112,32 @@ fn to_string(lex: &mut Lexer<Token>) -> Option<String> {
 /// From r7rs small: "Identifiers that do not begin with a vertical line are
 /// terminated by a delimiter or by the end of the input."
 /// dot, numbers, characters, and booleans"
-pub struct DLexer<'a> {
-    lexer: Peekable<Lexer<'a, Token>>,
+pub struct DLexer {
+    lexer: Peekable<std::vec::IntoIter<Result<Token, ()>>>,
 }
 
-impl<'a> DLexer<'a> {
+impl DLexer {
     /// This function returns a new lexer for the given input.
     /// It creates a Logos lexer and wraps it in a Peekable iterator.
-    pub fn new(input: &'a str) -> Self {
+    pub fn new(input: &str) -> Self {
         Self {
-            lexer: Token::lexer(input).peekable(),
+            lexer: Token::lexer(input)
+                .map(|result| result)
+                .collect::<Vec<Result<Token, ()>>>()
+                .into_iter()
+                .peekable(),
         }
+    }
+
+    pub fn peek(&mut self) -> Option<Result<Token, ()>> {
+        self.lexer.peek().map(|t: &Result<Token, ()>| match t {
+            Ok(t) => Ok(t.clone()),
+            Err(_) => Err(()),
+        })
     }
 }
 
-impl Iterator for DLexer<'_> {
+impl Iterator for DLexer {
     type Item = Result<Token, ()>;
 
     /// This function returns the next token in the lexer.

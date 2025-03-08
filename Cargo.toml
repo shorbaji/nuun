@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = [ "apps/api",
     "apps/runner",
     "libs/dal",
 ]
