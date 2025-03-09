@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 
 pub enum Language {
     Dal,
+    Javascript,
     Python,
 }
 
@@ -14,12 +15,17 @@ pub trait Runtime {
 }
 
 pub struct PythonRuntime {
+    globals: Py<PyDict>,
 }
 
 impl PythonRuntime {
     pub fn new() -> Self {
-        PythonRuntime {
-        }
+        Python::with_gil(|py| {
+            let globals = PyDict::new(py).into();
+            PythonRuntime {
+                globals,
+            }
+        })
     }
 }
 
@@ -33,20 +39,19 @@ impl Runtime for PythonRuntime {
         // we .run() the program with some globals and empty locals
         // and then if Some(expr) we return .eval() using the globals and locals otherwise we return "None"
 
-
         Python::with_gil(|py| {
-            let globals = PyDict::new(py);
-            let locals = PyDict::new(py);
+            
+            let globals = self.globals.bind(py);
 
             let program = CString::new(program).expect("CString::new failed");
-            let run_result = py.run(&program, Some(&globals), Some(&locals));
+            let run_result = py.run(&program, Some(&globals), None);
 
             match run_result {
                 Ok(_) => {
                     let result = match expr {
                         Some(expr) => {
                             let expr = CString::new(expr).expect("CString::new failed");
-                            let eval_result = py.eval(&expr, Some(&globals), Some(&locals));
+                            let eval_result = py.eval(&expr, Some(&globals), None);
                             match eval_result {
                                 Ok(eval_result) => Ok(eval_result.to_string()),
                                 Err(e) => Err(format!("Python execution error: {}", e))
