@@ -1,7 +1,7 @@
 [workspace]
 members = [ 
     "apps/runner",
-    "libs/dal",
+    "libs/dal", "libs/dust",
     "libs/runtime",
 ]
 resolver = "3"
