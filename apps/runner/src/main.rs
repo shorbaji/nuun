@@ -1,52 +1,50 @@
-use std::convert::Infallible;
-use std::net::SocketAddr;
-
-use http_body_util::Full;
-use hyper::body::Bytes;
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{Request, Response};
-use hyper_util::rt::TokioIo;
-use tokio::net::TcpListener;
+use runtime::{Language, Runtime, PythonRuntime};
+use pyo3::prepare_freethreaded_python;
 
 struct Runner {
+    runtime: Box<dyn Runtime>,
 }
 
 impl Runner {
-    pub fn new() -> Self {
-        Runner {}
-    }
+    pub fn new(language: Language) -> Self {
+        match language {
+            Language::Python => {
+                prepare_freethreaded_python();
 
-    pub async fn eval(&self, code: &str) -> Result<dal::Object, Box<dyn std::error::Error + Send + Sync>> {
-        let mut machine = dal::Machine::new();
-        machine.eval(code).await
+                Runner {
+                    runtime: Box::new(PythonRuntime::new()),
+                }
+            },
+            _ => unimplemented!("Language not implemented")
+        }
     }
 }
 
-async fn hello(_: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
-    let runner = Runner::new();
-    _ = runner.eval("(+ 1 2)").await;
 
-    Ok(Response::new(Full::from(Bytes::from("Hello, world!"))))
-}
+fn main() {
+    let runner = Runner::new(Language::Python);
+    
+    match runner.runtime.eval("x=42", Some("x")) {
+        Ok(s) => println!("{}", s),
+        Err(e) => eprintln!("{}", e),
+    };
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    let listener = TcpListener::bind(&addr).await?;
+    match runner.runtime.eval("y=7", Some("x + y")) {
+        Ok(s) => println!("{}", s),
+        Err(e) => eprintln!("{}", e),
+    };
 
-    loop {
-        let (stream, _) = listener.accept().await?;
+    let program = r#"
+def double(x):
+    return x * 2
+    
+def quadruple(x):
+    return double(double(x))
+"#;
 
-        let io = TokioIo::new(stream);
+    match runner.runtime.eval(program, Some("quadruple(y)")) {
+        Ok(s) => println!("{}", s),
+        Err(e) => eprintln!("{}", e),
+    };
 
-        tokio::task::spawn(async move {
-            if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(hello))
-                .await
-            {
-                eprintln!("Error: {}", err);
-            }
-        });
-    }
 }

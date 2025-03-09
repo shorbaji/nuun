@@ -1,8 +1,7 @@
 """
 This is the main module of the API service.
 """
-
-import importlib.metadata
+from typing import Optional
 
 import importlib
 
@@ -11,7 +10,17 @@ import pydantic
 import httpx
 
 class EvalRequest(pydantic.BaseModel):
-    code: str
+    """
+    Request model for the eval endpoint.
+    
+    Attributes:
+        language (str): Programming language
+        program (str): Program code
+        expr (Optional[str]): Expression to evaluate as return value
+    """
+    language: str
+    program: str
+    expr: Optional[str] = None
 
 class AbanosAPI(fastapi.FastAPI):
     """

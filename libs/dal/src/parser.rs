@@ -61,70 +61,6 @@ impl Parser {
         .or_else(|_| self.false_())
     }
 
-    fn number(&mut self) -> Result<Sexp, DalError> {
-        self.tokens.peek()
-        .ok_or(DalError::ParserError("expected number".to_string()))
-        .map(|result|
-            result
-            .map_err(|e| DalError::LexerError)
-            .and_then(|token| {
-                match token {
-                    Token::Number(n) => Ok(Sexp::Atom(Atom::Number(n))),
-                    _ => Err(DalError::ParserError("expected number".to_string())),
-                }
-            })
-        )
-    }
-
-    fn character(&mut self) -> Result<Sexp, DalError> {
-        self.tokens.peek()
-        .map(|result|
-            result
-            .map_err(|e| DalError::LexerError)
-            .and_then(|token| {
-                match token {
-                    Token::Char(c) => Ok(Sexp::Atom(Atom::Char(c))),
-                    _ => Err(DalError::ParserError("expected character".to_string())),
-                }
-            })
-        )
-    }
-
-    fn string(&mut self) -> Result<Sexp, DalError> {
-        self.tokens.peek()
-        .map(|result|
-            result
-            .map_err(|e| DalError::LexerError)
-            .and_then(|token| {
-                match token {
-                    Token::String(s) => Ok(Sexp::Atom(Atom::String(s))),
-                    _ => Err(DalError::ParserError("expected string".to_string())),
-                }
-            })
-        )
-    }
-
-    fn symbol(&mut self) -> Result<Sexp, DalError> {
-        self.tokens.peek()
-        .map(|result|
-            result
-            .map_err(|e| DalError::LexerError)
-            .and_then(|token| {
-                match token {
-                    Token::Identifier(s) => Ok(Sexp::Atom(Atom::Symbol(s))),
-                    _ => Err(DalError::ParserError("expected symbol".to_string())),
-                }
-            })
-        )
-    }
-
-    fn simple(&mut self) -> Result<Sexp, DalError> {
-        self.boolean()?
-        .or_else(|| self.number()?)
-        .or_else(|| self.character()?)
-        .or_else(|| self.string()?)
-        .or_else(|| self.symbol()?)
-    }
 
     fn get(&mut self, expected: Token) -> Result<(), DalError> {
         self.tokens.peek()
@@ -140,10 +76,6 @@ impl Parser {
             })
         )
         .unwrap_or(Err(DalError::ParserError("expected something".to_string())))
-    }
-
-    fn paren_left(&mut self) -> Result<(), DalError> {
-        self.get(Token::ParenLeft)
     }
 
     fn one_or_more<F, T>(&mut self, mut f: F) -> Result<(), DalError>
@@ -162,39 +94,12 @@ impl Parser {
         Ok(())
     }
 
-    fn pair(&mut self) -> Result<Sexp, DalError> {
-        self.paren_left()?;
-
-        let car = self.sexp()?;
-        let cdr = self.cdr()?;
-
-        Ok(Sexp::Pair(Box::new(car), Box::new(cdr)))
-
-    }
-
-    fn compound(&mut self) -> Result<Sexp, DalError> {
-        self.tokens.peek()
-        .map(|result|
-            result
-            .map_err(|e| DalError::LexerError)
-            .and_then(|token| {
-                match token {
-                    Token::ParenLeft => self.list(),
-                    Token::HashOpen => self.vector(),
-                    Token::HashU8Open => self.bytevector(),
-                    _ => Err(DalError::ParserError("expected compound expression".to_string())),
-                }
-            })
-        )
-    }
-
     fn sexp(&mut self) -> Result<Sexp, DalError> {
-        self.simple()
-        .or_else(|| self.compound())
+        unimplemented!("sexp")
     }
 }
 
-impl<'a> std::iter::Iterator for Parser<'a> {
+impl std::iter::Iterator for Parser {
     type Item = Result<Sexp, DalError>;
 
     fn next(&mut self) -> Option<Self::Item> {

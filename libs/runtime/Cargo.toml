@@ -1,0 +1,8 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pyo3 = "0.23.5"
+uuid = "1.15.1"
