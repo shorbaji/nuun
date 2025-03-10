@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package nuun;
+
+enum Language {
+    LANGUAGE_UNSPECIFIED = 0;
+    PYTHON = 1;
+    JAVASCRIPT = 2;
+    DAL = 3;
+}
+
+message RunRequest {
+    Language language = 1;
+    string program = 2;
+    optional string expr = 3;
+}
+
+message RunResponse {
+    oneof result {
+        string output = 1;
+        string error = 2;
+    }
+}
+
+service nuun {
+    rpc Run (RunRequest) returns (RunResponse) {}
+}
