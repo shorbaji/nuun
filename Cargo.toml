@@ -1,6 +1,6 @@
 [workspace]
 members = [ 
-    "apps/runner",
+    "apps/runner", "cli",
     "libs/dal", "libs/dust",
     "libs/runtime",
 ]
